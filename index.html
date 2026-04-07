@@ -313,11 +313,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-h
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 const MN=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const EC=['Moradia','Alimentação','Transporte','Saúde','Lazer','Educação','Assinaturas','Vestuário','Outros'];
+const EC=['Moradia','Alimentação','Transporte','Saúde','Lazer','Educação','Assinaturas','Vestuário', 'Faturas'
+,'Outros'];
 const IC=['Salário','Freelance','Investimentos','Extra','Outros'];
 const IT=['Renda Fixa','Ações','FIIs','Criptomoedas','Tesouro Direto','CDB/LCI/LCA','Poupança','Outros'];
-const CL={'Moradia':'#0a84ff','Alimentação':'#34c759','Transporte':'#ffd60a','Saúde':'#ff9f0a','Lazer':'#bf5af2','Educação':'#ff375f','Assinaturas':'#64d2ff','Vestuário':'#ff6961','Outros':'#6b6b72','Salário':'#34c759','Freelance':'#30d158','Investimentos':'#0a84ff','Extra':'#ffd60a','Renda Fixa':'#0a84ff','Ações':'#34c759','FIIs':'#bf5af2','Criptomoedas':'#ffd60a','Tesouro Direto':'#32d0c4','CDB/LCI/LCA':'#ff9f0a','Poupança':'#64d2ff'};
-const IC2={'Moradia':'🏠','Alimentação':'🛒','Transporte':'🚗','Saúde':'💊','Lazer':'🎮','Educação':'📚','Assinaturas':'📡','Vestuário':'👕','Outros':'📌','Salário':'💼','Freelance':'💻','Investimentos':'📈','Extra':'⚡','Renda Fixa':'🔒','Ações':'📊','FIIs':'🏢','Criptomoedas':'₿','Tesouro Direto':'🏛','CDB/LCI/LCA':'🏦','Poupança':'💰'};
+const CL={'Moradia':'#0a84ff','Alimentação':'#34c759','Transporte':'#ffd60a','Saúde':'#ff9f0a','Lazer':'#bf5af2','Educação':'#ff375f','Assinaturas':'#64d2ff', 'Faturas':'#191970','Vestuário':'#ff6961','Outros':'#6b6b72','Salário':'#34c759','Freelance':'#30d158','Investimentos':'#0a84ff','Extra':'#ffd60a','Renda Fixa':'#0a84ff','Ações':'#34c759','FIIs':'#bf5af2','Criptomoedas':'#ffd60a','Tesouro Direto':'#32d0c4','CDB/LCI/LCA':'#ff9f0a','Poupança':'#64d2ff'};
+const IC2={'Moradia':'🏠','Alimentação':'🛒','Transporte':'🚗','Saúde':'💊','Lazer':'🎮','Educação':'📚','Assinaturas':'📡', 'Faturas': '💳', 'Vestuário':'👕','Outros':'📌','Salário':'💼','Freelance':'💻','Investimentos':'📈','Extra':'⚡','Renda Fixa':'🔒','Ações':'📊','FIIs':'🏢','Criptomoedas':'₿','Tesouro Direto':'🏛','CDB/LCI/LCA':'🏦','Poupança':'💰'};
 
 let cm=new Date().getMonth(),cy=new Date().getFullYear();
 let mtype='',curPage='overview',hfilt='all';
