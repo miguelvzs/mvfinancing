@@ -463,6 +463,13 @@ body.authed .auth-ovl{display:none}
         <div id="setStats"></div>
       </div>
       <div class="set-card">
+        <h3>Trocar senha</h3>
+        <p>Altere a senha da sua conta. Precisa informar a senha atual.</p>
+        <div class="fld"><label>Senha atual</label><input id="ch-cur" type="password" autocomplete="current-password"></div>
+        <div class="fld"><label>Nova senha (mín. 6)</label><input id="ch-new" type="password" autocomplete="new-password"></div>
+        <div class="set-acts"><button class="set-btn prim" onclick="changePass()">Salvar nova senha</button></div>
+      </div>
+      <div class="set-card">
         <h3>Zona de perigo</h3>
         <p>Ações abaixo são irreversíveis. Exporte um backup antes.</p>
         <div class="set-acts">
@@ -1214,6 +1221,16 @@ async function onAuthed(j){
   document.body.classList.add('authed');
   const fu=document.getElementById('footUser');if(fu)fu.textContent='@'+AUTH.user;
   render();
+}
+async function changePass(){
+  const current=document.getElementById('ch-cur').value;
+  const password=document.getElementById('ch-new').value;
+  if(!current||!password){toast('Preencha senha atual e nova.');return;}
+  try{
+    await api('change','POST',{current,password});
+    document.getElementById('ch-cur').value='';document.getElementById('ch-new').value='';
+    toast('Senha alterada com sucesso.');
+  }catch(e){toast(e.message);}
 }
 function logout(){
   localStorage.removeItem('mvf3_token');localStorage.removeItem('mvf3_user');
