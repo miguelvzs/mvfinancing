@@ -32,7 +32,27 @@
 }
 html{font-size:15px}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;-webkit-font-smoothing:antialiased;transition:background .2s,color .2s}
-.app{display:flex;min-height:100vh}
+.app{display:none;min-height:100vh}
+body.authed .app{display:flex}
+
+/* AUTH */
+.auth-ovl{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;transition:background .2s}
+body.authed .auth-ovl{display:none}
+.auth-card{width:380px;max-width:94vw;background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:28px 26px;animation:su .2s ease}
+.auth-logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:22px}
+.auth-logo span{font-size:17px;font-weight:500}
+.auth-tabs{display:flex;gap:6px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);padding:3px;margin-bottom:20px}
+.atab{flex:1;background:none;border:none;color:var(--mu);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px;border-radius:6px;cursor:pointer;transition:all .15s}
+.atab.on{background:var(--sf3);color:var(--tx)}
+.auth-sub{font-size:12px;color:var(--mu);text-align:center;margin-bottom:16px;line-height:1.5}
+.auth-link{font-size:12px;color:var(--bl);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0;margin-top:14px;display:block;width:100%;text-align:center}
+.auth-link:hover{text-decoration:underline}
+.auth-err{font-size:12px;color:var(--re);text-align:center;margin-top:13px;min-height:16px}
+.auth-btn{width:100%;background:var(--tx);color:var(--bg);border:none;border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:11px;cursor:pointer;transition:opacity .15s;margin-top:6px}
+.auth-btn:hover{opacity:.85}
+.logout-btn{margin-top:11px;font-size:11px;color:var(--mu);background:none;border:1px solid var(--bd);border-radius:6px;padding:6px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.logout-btn:hover{border-color:var(--re);color:var(--re)}
+.sync-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gr);margin-right:6px;vertical-align:middle}
 
 /* SIDEBAR */
 .sidebar{width:224px;flex-shrink:0;border-right:1px solid var(--bd);display:flex;flex-direction:column;padding:24px 0;position:fixed;height:100vh;top:0;left:0;background:var(--bg);z-index:40;overflow-y:auto;transition:transform .25s ease}
@@ -272,6 +292,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-h
 </style>
 </head>
 <body>
+
+<div class="auth-ovl" id="authOvl">
+  <div class="auth-card">
+    <div class="auth-logo"><div class="mvb">MV</div><span>MV Financing</span></div>
+    <div class="auth-tabs">
+      <button class="atab on" id="tabLogin" onclick="authMode('login')">Entrar</button>
+      <button class="atab" id="tabReg" onclick="authMode('register')">Criar conta</button>
+    </div>
+    <div id="authBody"></div>
+    <div class="auth-err" id="authErr"></div>
+  </div>
+</div>
+
 <div class="app">
 
 <div class="scrim" id="scrim" onclick="closeSidebar()"></div>
@@ -301,7 +334,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-h
     <span class="nav-lbl">Sistema</span>
     <button class="nv" data-page="settings"><span class="ndot"></span>Configurações</button>
   </div>
-  <div class="sf-foot">Dados salvos localmente<br>no seu navegador</div>
+  <div class="sf-foot"><span class="sync-dot"></span><span id="footUser"></span><br>Sincronizado na nuvem<br><button class="logout-btn" onclick="logout()">Sair da conta</button></div>
 </aside>
 
 <main class="main">
@@ -485,13 +518,13 @@ let catCI=null,histCI=null,invCI=null,netCI=null;
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 const mk=(m,y)=>`mvf3_${y??cy}_${m??cm}`;
 function gd(m,y){const r=localStorage.getItem(mk(m,y));return r?JSON.parse(r):{salary:0,income:[],expenses:[],bills:[]}}
-function sd(d,m,y){localStorage.setItem(mk(m,y),JSON.stringify(d))}
+function sd(d,m,y){localStorage.setItem(mk(m,y),JSON.stringify(d));syncPush();}
 function gg(){return JSON.parse(localStorage.getItem('mvf3_goals')||'[]')}
-function sg(g){localStorage.setItem('mvf3_goals',JSON.stringify(g))}
+function sg(g){localStorage.setItem('mvf3_goals',JSON.stringify(g));syncPush();}
 function gi(){return JSON.parse(localStorage.getItem('mvf3_invest')||'[]')}
-function si(i){localStorage.setItem('mvf3_invest',JSON.stringify(i))}
+function si(i){localStorage.setItem('mvf3_invest',JSON.stringify(i));syncPush();}
 function gb(){return JSON.parse(localStorage.getItem('mvf3_budgets')||'{}')}
-function sb(b){localStorage.setItem('mvf3_budgets',JSON.stringify(b))}
+function sb(b){localStorage.setItem('mvf3_budgets',JSON.stringify(b));syncPush();}
 
 const brl=v=>'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const ppct=v=>(v>=0?'+':'')+parseFloat(v||0).toFixed(2)+'%';
@@ -1071,7 +1104,7 @@ function importBackup(input){
     confirm2('Restaurar backup',`Importar ${keys.length} registro(s)? Isso substitui os dados atuais correspondentes.`,()=>{
       keys.forEach(k=>localStorage.setItem(k,data[k]));
       if(data['mvf3_theme'])refreshTheme();
-      goToday();toast('Backup restaurado.');
+      syncPush();goToday();toast('Backup restaurado.');
     },false);
     input.value='';
   };
@@ -1080,18 +1113,145 @@ function importBackup(input){
 function refreshTheme(){applyTheme(localStorage.getItem('mvf3_theme')||'dark');}
 function clearMonth(){
   confirm2('Limpar mês',`Apagar todos os lançamentos de ${MN[cm]} de ${cy}? (Metas e investimentos não são afetados.)`,()=>{
-    localStorage.removeItem(mk());render();toast('Mês limpo.');
+    localStorage.removeItem(mk());syncPush();render();toast('Mês limpo.');
   });
 }
 function clearAll(){
   confirm2('Apagar tudo','Isso apaga TODOS os dados (meses, metas e investimentos) permanentemente. Recomendamos baixar um backup antes. Continuar?',()=>{
-    const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('mvf3_'))ks.push(k);}
-    ks.forEach(k=>localStorage.removeItem(k));goToday();toast('Todos os dados foram apagados.');
+    const keep=['mvf3_token','mvf3_user','mvf3_theme'];
+    const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('mvf3_')&&!keep.includes(k))ks.push(k);}
+    ks.forEach(k=>localStorage.removeItem(k));syncPush();goToday();toast('Todos os dados foram apagados.');
   });
 }
 
-refreshTheme();
-render();
+// ===== AUTH + SYNC NA NUVEM =====
+const AUTH={token:localStorage.getItem('mvf3_token')||'',user:localStorage.getItem('mvf3_user')||''};
+const escAuth=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function authHeaders(){const h={'Content-Type':'application/json'};if(AUTH.token)h['Authorization']='Bearer '+AUTH.token;return h;}
+async function api(path,method,body){
+  const r=await fetch('/api/'+path,{method,headers:authHeaders(),body:body?JSON.stringify(body):undefined});
+  let j={};try{j=await r.json();}catch(e){}
+  if(!r.ok)throw new Error(j.error||('Erro '+r.status));
+  return j;
+}
+function authErr(m){const e=document.getElementById('authErr');if(e)e.textContent=m||'';}
+function setTab(m){document.getElementById('tabLogin').classList.toggle('on',m==='login');document.getElementById('tabReg').classList.toggle('on',m==='register');}
+
+function authMode(m){
+  authErr('');
+  if(m==='login'||m==='register')setTab(m);
+  const b=document.getElementById('authBody');
+  if(m==='login'){
+    b.innerHTML=`<div class="fld"><label>Usuário</label><input id="a-user" autocomplete="username"></div>
+    <div class="fld"><label>Senha</label><input id="a-pass" type="password" autocomplete="current-password"></div>
+    <button class="auth-btn" onclick="doLogin()">Entrar</button>
+    <button class="auth-link" onclick="authMode('forgot')">Esqueci minha senha</button>`;
+  }else if(m==='register'){
+    b.innerHTML=`<div class="fld"><label>Usuário</label><input id="a-user" autocomplete="username"></div>
+    <div class="fld"><label>Senha (mín. 6)</label><input id="a-pass" type="password" autocomplete="new-password"></div>
+    <div class="fld"><label>Pergunta de segurança</label><input id="a-q" placeholder="Ex: Nome do meu primeiro pet?"></div>
+    <div class="fld"><label>Resposta</label><input id="a-a"></div>
+    <button class="auth-btn" onclick="doRegister()">Criar conta</button>`;
+  }else if(m==='forgot'){
+    b.innerHTML=`<div class="auth-sub">Informe seu usuário para ver a pergunta de segurança.</div>
+    <div class="fld"><label>Usuário</label><input id="a-user"></div>
+    <button class="auth-btn" onclick="doForgot()">Continuar</button>
+    <button class="auth-link" onclick="authMode('login')">Voltar ao login</button>`;
+  }
+  bindEnter();
+  setTimeout(()=>document.getElementById('a-user')?.focus(),50);
+}
+function bindEnter(){
+  const b=document.getElementById('authBody');
+  b.querySelectorAll('input').forEach(i=>i.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();b.querySelector('.auth-btn')?.click();}}));
+}
+
+async function doLogin(){
+  authErr('');
+  const username=document.getElementById('a-user').value.trim();
+  const password=document.getElementById('a-pass').value;
+  if(!username||!password){authErr('Preencha usuário e senha.');return;}
+  try{const j=await api('login','POST',{username,password});await onAuthed(j);}catch(e){authErr(e.message);}
+}
+async function doRegister(){
+  authErr('');
+  const username=document.getElementById('a-user').value.trim();
+  const password=document.getElementById('a-pass').value;
+  const question=document.getElementById('a-q').value.trim();
+  const answer=document.getElementById('a-a').value.trim();
+  if(!username||!password||!question||!answer){authErr('Preencha todos os campos.');return;}
+  try{const j=await api('register','POST',{username,password,question,answer});await onAuthed(j);toast('Conta criada com sucesso.');}catch(e){authErr(e.message);}
+}
+async function doForgot(){
+  authErr('');
+  const username=document.getElementById('a-user').value.trim();
+  if(!username){authErr('Informe o usuário.');return;}
+  try{
+    const j=await api('forgot','POST',{username});
+    const b=document.getElementById('authBody');
+    b.innerHTML=`<div class="auth-sub"><strong>${escAuth(j.question)}</strong></div>
+    <input type="hidden" id="a-user" value="${escAuth(username)}">
+    <div class="fld"><label>Resposta de segurança</label><input id="a-a"></div>
+    <div class="fld"><label>Nova senha (mín. 6)</label><input id="a-pass" type="password"></div>
+    <button class="auth-btn" onclick="doReset()">Redefinir senha</button>
+    <button class="auth-link" onclick="authMode('login')">Voltar ao login</button>`;
+    bindEnter();setTimeout(()=>document.getElementById('a-a')?.focus(),50);
+  }catch(e){authErr(e.message);}
+}
+async function doReset(){
+  authErr('');
+  const username=document.getElementById('a-user').value;
+  const answer=document.getElementById('a-a').value.trim();
+  const password=document.getElementById('a-pass').value;
+  if(!answer||!password){authErr('Preencha resposta e nova senha.');return;}
+  try{const j=await api('reset','POST',{username,answer,password});await onAuthed(j);toast('Senha redefinida.');}catch(e){authErr(e.message);}
+}
+
+async function onAuthed(j){
+  AUTH.token=j.token;AUTH.user=j.username;
+  localStorage.setItem('mvf3_token',j.token);localStorage.setItem('mvf3_user',j.username);
+  await pullData();
+  document.body.classList.add('authed');
+  const fu=document.getElementById('footUser');if(fu)fu.textContent='@'+AUTH.user;
+  render();
+}
+function logout(){
+  localStorage.removeItem('mvf3_token');localStorage.removeItem('mvf3_user');
+  AUTH.token='';AUTH.user='';
+  Object.keys(localStorage).filter(k=>k.startsWith('mvf3_')&&k!=='mvf3_theme').forEach(k=>localStorage.removeItem(k));
+  document.body.classList.remove('authed');
+  authMode('login');
+}
+async function pullData(){
+  const {data}=await api('data','GET');
+  Object.keys(localStorage).filter(k=>k.startsWith('mvf3_')&&!['mvf3_token','mvf3_user','mvf3_theme'].includes(k)).forEach(k=>localStorage.removeItem(k));
+  Object.entries(data||{}).forEach(([k,v])=>{if(k.startsWith('mvf3_'))localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v));});
+  refreshTheme();
+}
+let _pushT=null;
+function syncPush(){
+  if(!AUTH.token)return;
+  clearTimeout(_pushT);
+  _pushT=setTimeout(async()=>{
+    const data={};
+    Object.keys(localStorage).forEach(k=>{if(k.startsWith('mvf3_')&&!['mvf3_token','mvf3_user'].includes(k))data[k]=localStorage.getItem(k);});
+    try{await api('data','PUT',{data});}catch(e){}
+  },800);
+}
+
+async function boot(){
+  refreshTheme();
+  authMode('login');
+  if(AUTH.token){
+    try{
+      await pullData();
+      document.body.classList.add('authed');
+      const fu=document.getElementById('footUser');if(fu)fu.textContent='@'+AUTH.user;
+      render();
+    }catch(e){logout();}
+  }
+}
+boot();
 </script>
 </body>
 </html>
